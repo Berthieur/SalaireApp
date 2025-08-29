@@ -9,10 +9,12 @@
             font-family: Arial, sans-serif;
             margin: 20px;
             background-color: #f4f4f9;
+            animation: fadeIn 1s ease-in;
         }
         h1 {
             text-align: center;
             color: #333;
+            animation: slideDown 0.5s ease-out;
         }
         table {
             width: 100%;
@@ -20,11 +22,13 @@
             margin-top: 20px;
             background-color: #fff;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            animation: fadeIn 1s ease-in;
         }
         th, td {
             border: 1px solid #ddd;
             padding: 12px;
             text-align: left;
+            transition: background-color 0.3s;
         }
         th {
             background-color: #4CAF50;
@@ -34,18 +38,34 @@
             background-color: #f9f9f9;
         }
         tr:hover {
-            background-color: #f1f1f1;
+            background-color: #e0e0e0;
+            animation: pulse 0.5s;
         }
         .no-data {
             text-align: center;
             padding: 20px;
             color: #888;
+            animation: fadeIn 1s ease-in;
+        }
+        /* Animations CSS */
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideDown {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
         }
     </style>
 </head>
 <body>
     <h1>Tableau de bord - Paiements et Remboursements</h1>
-    <p>Débogage : Nombre de paiements = {{ payments | length }}</p> <!-- Débogage temporaire -->
+    <p>Débogage : Nombre de paiements = {{ payments | length }}</p>
     <table>
         <thead>
             <tr>
@@ -69,8 +89,8 @@
                     <td>{{ payment.employee_name or '-' }}</td>
                     <td>{{ payment.payment_type or '-' }}</td>
                     <td>{{ payment.amount | round(2) if payment.amount else '-' }}</td>
-                    <td>{{ payment.date | timestamp_to_datetime_full if payment.date else '-' }}</td> <!-- Utilise le nouveau filtre -->
-                    <td>{{ payment.date | timestamp_to_datetime_full if payment.date else '-' }}</td> <!-- Utilise le nouveau filtre -->
+                    <td>{{ payment.date | timestamp_to_datetime_full if payment.date else '-' }}</td>
+                    <td>{{ payment.date | timestamp_to_datetime_full if payment.date else '-' }}</td>
                 </tr>
                 {% endfor %}
             {% else %}
