@@ -1,3 +1,4 @@
+# app.py
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 import sqlite3
@@ -283,8 +284,14 @@ def dashboard():
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT e.nom, e.prenom, e.type, s.employee_name, s.type AS payment_type, 
-                   s.amount, s.period, s.date
+            SELECT COALESCE(e.nom, SPLIT_PART(s.employee_name, ' ', 1)) AS nom,
+                   COALESCE(e.prenom, SPLIT_PART(s.employee_name, ' ', 2)) AS prenom,
+                   COALESCE(e.type, 'inconnu') AS type,
+                   s.employee_name,
+                   s.type AS payment_type,
+                   s.amount,
+                   s.period,
+                   s.date
             FROM salaries s
             LEFT JOIN employees e ON e.id = s.employee_id
             ORDER BY s.date DESC
@@ -297,8 +304,4 @@ def dashboard():
 
 # --- Démarrage ---
 if __name__ == '__main__':
-    port = int(os.getenv('PORT'))
-    if port is None:
-        print("Erreur: La variable d'environnement PORT n'est pas définie. Utilisation du port 5000 par défaut pour le développement local.")
-        port = 5000
-    app.run(host='0.0.0.0', port=port, debug=False)
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)), debug=False)
