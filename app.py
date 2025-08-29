@@ -1,4 +1,3 @@
-# app.py
 from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 import sqlite3
@@ -284,14 +283,15 @@ def dashboard():
         conn.row_factory = sqlite3.Row
         cursor = conn.cursor()
         cursor.execute('''
-            SELECT COALESCE(e.nom, SPLIT_PART(s.employee_name, ' ', 1)) AS nom,
-                   COALESCE(e.prenom, SPLIT_PART(s.employee_name, ' ', 2)) AS prenom,
-                   COALESCE(e.type, 'inconnu') AS type,
-                   s.employee_name,
-                   s.type AS payment_type,
-                   s.amount,
-                   s.period,
-                   s.date
+            SELECT 
+                COALESCE(e.nom, SUBSTR(s.employee_name, 1, INSTR(s.employee_name, ' ') - 1)) AS nom,
+                COALESCE(e.prenom, SUBSTR(s.employee_name, INSTR(s.employee_name, ' ') + 1)) AS prenom,
+                COALESCE(e.type, 'inconnu') AS type,
+                s.employee_name,
+                s.type AS payment_type,
+                s.amount,
+                s.period,
+                s.date
             FROM salaries s
             LEFT JOIN employees e ON e.id = s.employee_id
             ORDER BY s.date DESC
