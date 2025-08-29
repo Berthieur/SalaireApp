@@ -285,16 +285,20 @@ def dashboard():
         cursor.execute('''
             SELECT e.nom, e.prenom, e.type, s.employee_name, s.type AS payment_type, 
                    s.amount, s.period, s.date
-            FROM employees e
-            LEFT JOIN salaries s ON e.id = s.employee_id
-            WHERE e.is_active = 1
+            FROM salaries s
+            LEFT JOIN employees e ON e.id = s.employee_id
             ORDER BY s.date DESC
         ''')
         payments = [dict(row) for row in cursor.fetchall()]
+        print(f"Nombre de paiements récupérés : {len(payments)}")  # Débogage
         return render_template('dashboard.html', payments=payments)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 # --- Démarrage ---
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)), debug=False)
+    port = int(os.getenv('PORT'))
+    if port is None:
+        print("Erreur: La variable d'environnement PORT n'est pas définie. Utilisation du port 5000 par défaut pour le développement local.")
+        port = 5000
+    app.run(host='0.0.0.0', port=port, debug=False)
