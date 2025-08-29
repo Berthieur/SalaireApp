@@ -1,12 +1,13 @@
-from flask import Flask, jsonify, request, render_template
+from flask import Flask, jsonify, request, render_template, session, redirect, url_for
 from flask_cors import CORS
 import sqlite3
 import os
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from database import init_db, get_db
 
 app = Flask(__name__)
+app.secret_key = 'votre_clé_secrète_ici'  # Remplacez par une clé sécurisée unique
 CORS(app, resources={r"/api/*": {"origins": "*"}})  # Autoriser toutes les origines pour les tests
 
 # --- Initialisation ---
@@ -15,28 +16,40 @@ init_db()
 # --- Filtres Jinja2 pour le template ---
 def timestamp_to_datetime_full(timestamp):
     try:
-        return datetime.fromtimestamp(timestamp / 1000).strftime('%d/%m/%Y %H:%M:%S')
+        # Ajuster pour EAT (UTC+3)
+        dt = datetime.fromtimestamp(timestamp / 1000, tz=datetime.utcnow().astimezone().tzinfo)
+        dt_eat = dt + timedelta(hours=3)  # Forcer EAT
+        return dt_eat.strftime('%d/%m/%Y %H:%M:%S')
     except (TypeError, ValueError):
         return '-'
 app.jinja_env.filters['timestamp_to_datetime_full'] = timestamp_to_datetime_full
 
 # --- Routes API ---
 
-# 1. 🔐 Login (exemple simple)
+# 1. 🔐 Login (mise à jour pour session)
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
     if data.get('username') == 'admin' and data.get('password') == '1234':
-        return jsonify({
-            "token": "fake-jwt-token-123",
-            "role": "admin",
-            "userId": "ADMIN001"
-        })
+        session['logged_in'] = True
+        session['role'] = 'admin'
+        session['userId'] = 'ADMIN001'
+        return jsonify({"status": "success", "message": "Connexion réussie"})
     return jsonify({"error": "Identifiants invalides"}), 401
 
-# 2. 👥 Enregistrement employé
+# 2. 🔓 Déconnexion
+@app.route('/api/logout', methods=['POST'])
+def logout():
+    session.pop('logged_in', None)
+    session.pop('role', None)
+    session.pop('userId', None)
+    return jsonify({"status": "success", "message": "Déconnexion réussie"})
+
+# 3. 👥 Enregistrement employé
 @app.route('/api/employees', methods=['POST'])
 def register_employee():
+    if not session.get('logged_in'):
+        return jsonify({"error": "Non autorisé"}), 403
     emp = request.get_json()
     required = ['id', 'nom', 'prenom', 'type']
     for field in required:
@@ -69,9 +82,11 @@ def register_employee():
     conn.commit()
     return jsonify({"status": "success", "message": "Employé enregistré"}), 201
 
-# 3. 📋 Liste de tous les employés
+# 4. 📋 Liste de tous les employés
 @app.route('/api/employees', methods=['GET'])
 def get_all_employees():
+    if not session.get('logged_in'):
+        return jsonify({"error": "Non autorisé"}), 403
     conn = get_db()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -79,18 +94,22 @@ def get_all_employees():
     employees = [dict(row) for row in cursor.fetchall()]
     return jsonify(employees)
 
-# 4. 👷 Employés actifs
+# 5. 👷 Employés actifs
 @app.route('/api/employees/active', methods=['GET'])
 def get_active_employees():
+    if not session.get('logged_in'):
+        return jsonify({"error": "Non autorisé"}), 403
     conn = get_db()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM employees WHERE is_active = 1 ORDER BY nom")
     return jsonify([dict(row) for row in cursor.fetchall()])
 
-# 5. 📍 Position (dernier pointage)
+# 6. 📍 Position (dernier pointage)
 @app.route('/api/employees/<employeeId>/position', methods=['GET'])
 def get_employee_position(employeeId):
+    if not session.get('logged_in'):
+        return jsonify({"error": "Non autorisé"}), 403
     conn = get_db()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -106,9 +125,11 @@ def get_employee_position(employeeId):
         return jsonify(dict(row))
     return jsonify({"error": "Aucun pointage trouvé"}), 404
 
-# 6. 💰 Enregistrer un salaire
+# 7. 💰 Enregistrer un salaire
 @app.route('/api/salary', methods=['POST'])
 def save_salary_record():
+    if not session.get('logged_in'):
+        return jsonify({"error": "Non autorisé"}), 403
     record = request.get_json()
     required = ['employeeId', 'employeeName', 'type', 'amount', 'period', 'date']
     for field in required:
@@ -134,26 +155,32 @@ def save_salary_record():
     conn.commit()
     return jsonify({"status": "success", "id": cursor.lastrowid}), 201
 
-# 7. 📅 Historique des salaires
+# 8. 📅 Historique des salaires
 @app.route('/api/salary/history', methods=['GET'])
 def get_salary_history():
+    if not session.get('logged_in'):
+        return jsonify({"error": "Non autorisé"}), 403
     conn = get_db()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
     cursor.execute("SELECT * FROM salaries ORDER BY date DESC")
     return jsonify([dict(row) for row in cursor.fetchall()])
 
-# 8. 📊 Statistiques par zone (exemple fictif)
+# 9. 📊 Statistiques par zone (exemple fictif)
 @app.route('/api/statistics/zones/<employeeId>', methods=['GET'])
 def get_zone_statistics(employeeId):
+    if not session.get('logged_in'):
+        return jsonify({"error": "Non autorisé"}), 403
     return jsonify([
         {"zone_name": "Zone A", "duration_seconds": 2700},
         {"zone_name": "Zone B", "duration_seconds": 1800}
     ])
 
-# 9. 🚶 Historique des mouvements (pointages)
+# 10. 🚶 Historique des mouvements (pointages)
 @app.route('/api/movements/<employeeId>', methods=['GET'])
 def get_movement_history(employeeId):
+    if not session.get('logged_in'):
+        return jsonify({"error": "Non autorisé"}), 403
     conn = get_db()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -165,9 +192,11 @@ def get_movement_history(employeeId):
     ''', [employeeId])
     return jsonify([dict(row) for row in cursor.fetchall()])
 
-# 10. ⚠️ Alerte zone interdite
+# 11. ⚠️ Alerte zone interdite
 @app.route('/api/alerts/forbidden-zone', methods=['POST'])
 def report_forbidden_zone():
+    if not session.get('logged_in'):
+        return jsonify({"error": "Non autorisé"}), 403
     alert = request.get_json()
     required = ['employeeId', 'employeeName', 'zoneName', 'timestamp']
     for field in required:
@@ -188,9 +217,11 @@ def report_forbidden_zone():
     conn.commit()
     return jsonify({"status": "alerte_enregistrée"}), 201
 
-# 11. 📡 État ESP32
+# 12. 📡 État ESP32
 @app.route('/api/esp32/status', methods=['GET'])
 def get_esp32_status():
+    if not session.get('logged_in'):
+        return jsonify({"error": "Non autorisé"}), 403
     return jsonify({
         "is_online": True,
         "last_seen": int(time.time() * 1000),
@@ -198,9 +229,11 @@ def get_esp32_status():
         "uptime_seconds": 3672
     })
 
-# 12. 🔊 Activer le buzzer
+# 13. 🔊 Activer le buzzer
 @app.route('/api/esp32/buzzer', methods=['POST'])
 def activate_buzzer():
+    if not session.get('logged_in'):
+        return jsonify({"error": "Non autorisé"}), 403
     data = request.get_json()
     duration = data.get('durationMs', 1000)
     return jsonify({
@@ -214,6 +247,8 @@ def activate_buzzer():
 # 🔄 Synchronisation : Récupérer les données non synchronisées
 @app.route('/api/sync/pointages', methods=['GET'])
 def get_unsynced_pointages():
+    if not session.get('logged_in'):
+        return jsonify({"error": "Non autorisé"}), 403
     conn = get_db()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -223,6 +258,8 @@ def get_unsynced_pointages():
 # 🔄 Envoyer des pointages depuis Android
 @app.route('/api/pointages', methods=['POST'])
 def add_pointage():
+    if not session.get('logged_in'):
+        return jsonify({"error": "Non autorisé"}), 403
     p = request.get_json()
     required = ['id', 'employeeId', 'employeeName', 'type', 'timestamp', 'date']
     for field in required:
@@ -249,6 +286,8 @@ def add_pointage():
 # 📥 Télécharger tous les pointages (pour mise à jour locale)
 @app.route('/api/pointages', methods=['GET'])
 def get_all_pointages():
+    if not session.get('logged_in'):
+        return jsonify({"error": "Non autorisé"}), 403
     conn = get_db()
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
@@ -258,6 +297,8 @@ def get_all_pointages():
 # 💸 Liste des employés avec leurs paiements
 @app.route('/api/employee_payments', methods=['GET'])
 def get_employee_payments():
+    if not session.get('logged_in'):
+        return jsonify({"error": "Non autorisé"}), 403
     try:
         conn = get_db()
         conn.row_factory = sqlite3.Row
@@ -275,9 +316,11 @@ def get_employee_payments():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-# 📊 Tableau de bord HTML
+# 📊 Tableau de bord HTML (sécurisé)
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
+    if not session.get('logged_in'):
+        return redirect(url_for('login'))
     try:
         conn = get_db()
         conn.row_factory = sqlite3.Row
@@ -286,7 +329,7 @@ def dashboard():
             SELECT 
                 COALESCE(e.nom, SUBSTR(s.employee_name, 1, INSTR(s.employee_name, ' ') - 1)) AS nom,
                 COALESCE(e.prenom, SUBSTR(s.employee_name, INSTR(s.employee_name, ' ') + 1)) AS prenom,
-                COALESCE(e.type, s.type) AS type,  -- Utiliser s.type comme fallback
+                COALESCE(e.type, s.type) AS type,
                 s.employee_name,
                 s.type AS payment_type,
                 s.amount,
@@ -303,6 +346,20 @@ def dashboard():
         return render_template('dashboard.html', payments=payments)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
+
+# 📝 Page de login
+@app.route('/login', methods=['GET', 'POST'])
+def login_page():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        if username == 'admin' and password == '1234':
+            session['logged_in'] = True
+            session['role'] = 'admin'
+            session['userId'] = 'ADMIN001'
+            return redirect(url_for('dashboard'))
+        return render_template('login.html', error="Identifiants invalides")
+    return render_template('login.html')
 
 # --- Démarrage ---
 if __name__ == '__main__':
