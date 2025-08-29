@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de bord - Paiements et Remboursements</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f9;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        .no-data {
+            text-align: center;
+            padding: 20px;
+            color: #888;
+        }
+    </style>
+</head>
+<body>
+    <h1>Tableau de bord - Paiements et Remboursements</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Prénom</th>
+                <th>Type</th>
+                <th>Nom complet (Paiement)</th>
+                <th>Type de paiement</th>
+                <th>Montant (€)</th>
+                <th>Période</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if payments %}
+                {% for payment in payments %}
+                <tr>
+                    <td>{{ payment.nom or '-' }}</td>
+                    <td>{{ payment.prenom or '-' }}</td>
+                    <td>{{ payment.type or '-' }}</td>
+                    <td>{{ payment.employee_name or '-' }}</td>
+                    <td>{{ payment.payment_type or '-' }}</td>
+                    <td>{{ payment.amount | round(2) if payment.amount else '-' }}</td>
+                    <td>{{ payment.period or '-' }}</td>
+                    <td>{{ payment.date | timestamp_to_datetime if payment.date else '-' }}</td>
+                </tr>
+                {% endfor %}
+            {% else %}
+                <tr>
+                    <td colspan="8" class="no-data">Aucune donnée disponible</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+</body>
+</html>
