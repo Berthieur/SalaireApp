@@ -16,7 +16,7 @@ init_db()
 def timestamp_to_datetime(timestamp):
     try:
         return datetime.fromtimestamp(timestamp / 1000).strftime('%d/%m/%Y')
-    except:
+    except (TypeError, ValueError):
         return '-'
 app.jinja_env.filters['timestamp_to_datetime'] = timestamp_to_datetime
 
@@ -298,6 +298,8 @@ def dashboard():
         ''')
         payments = [dict(row) for row in cursor.fetchall()]
         print(f"Nombre de paiements récupérés : {len(payments)}")  # Débogage
+        for payment in payments:  # Débogage supplémentaire
+            print(f"Payment data: nom={payment['nom']}, prenom={payment['prenom']}, type={payment['type']}, payment_type={payment['payment_type']}, date={payment['date']}, period={payment['period']}")
         return render_template('dashboard.html', payments=payments)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
