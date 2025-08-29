@@ -69,8 +69,8 @@
                     <td>{{ payment.employee_name or '-' }}</td>
                     <td>{{ payment.payment_type or '-' }}</td>
                     <td>{{ payment.amount | round(2) if payment.amount else '-' }}</td>
-                    <td>{{ payment.period or '-' }}</td>
-                    <td>{{ payment.date | timestamp_to_datetime if payment.date else '-' }}</td>
+                    <td>{{ payment.date | timestamp_to_datetime_full if payment.date else '-' }}</td> <!-- Utilise le nouveau filtre -->
+                    <td>{{ payment.date | timestamp_to_datetime_full if payment.date else '-' }}</td> <!-- Utilise le nouveau filtre -->
                 </tr>
                 {% endfor %}
             {% else %}
