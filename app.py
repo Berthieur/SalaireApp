@@ -13,12 +13,12 @@ CORS(app, resources={r"/api/*": {"origins": "*"}})  # Autoriser toutes les origi
 init_db()
 
 # --- Filtres Jinja2 pour le template ---
-def timestamp_to_datetime(timestamp):
+def timestamp_to_datetime_full(timestamp):
     try:
-        return datetime.fromtimestamp(timestamp / 1000).strftime('%d/%m/%Y')
+        return datetime.fromtimestamp(timestamp / 1000).strftime('%d/%m/%Y %H:%M:%S')
     except (TypeError, ValueError):
         return '-'
-app.jinja_env.filters['timestamp_to_datetime'] = timestamp_to_datetime
+app.jinja_env.filters['timestamp_to_datetime_full'] = timestamp_to_datetime_full
 
 # --- Routes API ---
 
@@ -286,7 +286,7 @@ def dashboard():
             SELECT 
                 COALESCE(e.nom, SUBSTR(s.employee_name, 1, INSTR(s.employee_name, ' ') - 1)) AS nom,
                 COALESCE(e.prenom, SUBSTR(s.employee_name, INSTR(s.employee_name, ' ') + 1)) AS prenom,
-                COALESCE(e.type, 'inconnu') AS type,
+                COALESCE(e.type, s.type) AS type,  -- Utiliser s.type comme fallback
                 s.employee_name,
                 s.type AS payment_type,
                 s.amount,
