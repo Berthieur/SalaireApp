@@ -60,7 +60,7 @@ def init_db():
             )
         ''')
 
-        # Table alerts (pour les zones interdites)
+        # Table alerts
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS alerts (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
