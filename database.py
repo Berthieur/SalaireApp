@@ -60,6 +60,18 @@ def init_db():
             )
         ''')
 
+        # Table alerts (pour les zones interdites)
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS alerts (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                employeeId TEXT NOT NULL,
+                employeeName TEXT NOT NULL,
+                zone_name TEXT NOT NULL,
+                timestamp INTEGER NOT NULL,
+                FOREIGN KEY(employeeId) REFERENCES employees(id)
+            )
+        ''')
+
         conn.commit()
 
 def get_db():
