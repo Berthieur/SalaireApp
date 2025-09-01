@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 app = Flask(__name__)
-app.secret_key = 'une_clé_secrète_unique_et_sécurisée_2025_v3'  # Nouvelle clé unique
+app.secret_key = '3fb5222037e2be9d7d09019e1b46e268ec470fa2974a3981'  # Nouvelle clé unique
 CORS(app, resources={r"/api/*": {"origins": "*"}})  # Autoriser toutes les origines pour les tests
 
 # --- Initialisation ---
