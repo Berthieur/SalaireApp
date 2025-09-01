@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from database import init_db, get_db
 
 app = Flask(__name__)
-app.secret_key = 'une_clé_secrète_unique_et_sécurisée_2025'  # Clé unique et spécifique
+app.secret_key = 'une_clé_secrète_unique_et_sécurisée_2025_v2'  # Nouvelle clé unique
 CORS(app, resources={r"/api/*": {"origins": "*"}})  # Autoriser toutes les origines pour les tests
 
 # --- Initialisation ---
@@ -28,8 +28,9 @@ app.jinja_env.filters['timestamp_to_datetime_full'] = timestamp_to_datetime_full
 @app.before_request
 def check_session():
     if request.path.startswith('/api/') and request.method in ['POST', 'GET'] and not session.get('logged_in'):
-        print(f"Session check failed for {request.path}, logged_in={session.get('logged_in')}")  # Débogage
+        print(f"Session check failed for {request.path}, session={session}, logged_in={session.get('logged_in')}")  # Débogage détaillé
         return jsonify({"error": "Non autorisé"}), 403
+    print(f"Session check passed for {request.path}, session={session}, logged_in={session.get('logged_in')}")  # Débogage
 
 # --- Routes API ---
 
@@ -42,7 +43,7 @@ def login():
         session['logged_in'] = True
         session['role'] = 'admin'
         session['userId'] = 'ADMIN001'
-        print("Login successful")  # Débogage
+        print("Login successful, session updated")  # Débogage
         return jsonify({"status": "success", "message": "Connexion réussie"})
     print("Login failed")  # Débogage
     return jsonify({"error": "Identifiants invalides"}), 401
@@ -338,7 +339,7 @@ def login_page():
             session['logged_in'] = True
             session['role'] = 'admin'
             session['userId'] = 'ADMIN001'
-            print("Login successful")  # Débogage
+            print("Login successful, session updated")  # Débogage
             return redirect(url_for('dashboard'))
         print("Login failed")  # Débogage
         return render_template('login.html', error="Identifiants invalides")
