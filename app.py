@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from database import init_db, get_db
 
 app = Flask(__name__)
-app.secret_key = 'votre_clé_secrète_ici'  # Remplacez par une clé sécurisée unique
+app.secret_key = 'une_clé_secrète_unique_et_sécurisée'  # Remplacez par une clé unique
 CORS(app, resources={r"/api/*": {"origins": "*"}})  # Autoriser toutes les origines pour les tests
 
 # --- Initialisation ---
@@ -30,11 +30,14 @@ app.jinja_env.filters['timestamp_to_datetime_full'] = timestamp_to_datetime_full
 @app.route('/api/login', methods=['POST'])
 def login():
     data = request.get_json()
+    print(f"Login attempt: {data}")  # Débogage
     if data.get('username') == 'admin' and data.get('password') == '1234':
         session['logged_in'] = True
         session['role'] = 'admin'
         session['userId'] = 'ADMIN001'
+        print("Login successful")  # Débogage
         return jsonify({"status": "success", "message": "Connexion réussie"})
+    print("Login failed")  # Débogage
     return jsonify({"error": "Identifiants invalides"}), 401
 
 # 2. 🔓 Déconnexion
@@ -49,6 +52,7 @@ def logout():
 @app.route('/api/employees', methods=['POST'])
 def register_employee():
     if not session.get('logged_in'):
+        print("Access denied to /api/employees")  # Débogage
         return jsonify({"error": "Non autorisé"}), 403
     emp = request.get_json()
     required = ['id', 'nom', 'prenom', 'type']
@@ -86,6 +90,7 @@ def register_employee():
 @app.route('/api/employees', methods=['GET'])
 def get_all_employees():
     if not session.get('logged_in'):
+        print("Access denied to /api/employees GET")  # Débogage
         return jsonify({"error": "Non autorisé"}), 403
     conn = get_db()
     conn.row_factory = sqlite3.Row
@@ -98,6 +103,7 @@ def get_all_employees():
 @app.route('/api/employees/active', methods=['GET'])
 def get_active_employees():
     if not session.get('logged_in'):
+        print("Access denied to /api/employees/active")  # Débogage
         return jsonify({"error": "Non autorisé"}), 403
     conn = get_db()
     conn.row_factory = sqlite3.Row
@@ -109,6 +115,7 @@ def get_active_employees():
 @app.route('/api/employees/<employeeId>/position', methods=['GET'])
 def get_employee_position(employeeId):
     if not session.get('logged_in'):
+        print("Access denied to /api/employees/position")  # Débogage
         return jsonify({"error": "Non autorisé"}), 403
     conn = get_db()
     conn.row_factory = sqlite3.Row
@@ -129,6 +136,7 @@ def get_employee_position(employeeId):
 @app.route('/api/salary', methods=['POST'])
 def save_salary_record():
     if not session.get('logged_in'):
+        print("Access denied to /api/salary")  # Débogage
         return jsonify({"error": "Non autorisé"}), 403
     record = request.get_json()
     required = ['employeeId', 'employeeName', 'type', 'amount', 'period', 'date']
@@ -159,6 +167,7 @@ def save_salary_record():
 @app.route('/api/salary/history', methods=['GET'])
 def get_salary_history():
     if not session.get('logged_in'):
+        print("Access denied to /api/salary/history")  # Débogage
         return jsonify({"error": "Non autorisé"}), 403
     conn = get_db()
     conn.row_factory = sqlite3.Row
@@ -170,6 +179,7 @@ def get_salary_history():
 @app.route('/api/statistics/zones/<employeeId>', methods=['GET'])
 def get_zone_statistics(employeeId):
     if not session.get('logged_in'):
+        print("Access denied to /api/statistics/zones")  # Débogage
         return jsonify({"error": "Non autorisé"}), 403
     return jsonify([
         {"zone_name": "Zone A", "duration_seconds": 2700},
@@ -180,6 +190,7 @@ def get_zone_statistics(employeeId):
 @app.route('/api/movements/<employeeId>', methods=['GET'])
 def get_movement_history(employeeId):
     if not session.get('logged_in'):
+        print("Access denied to /api/movements")  # Débogage
         return jsonify({"error": "Non autorisé"}), 403
     conn = get_db()
     conn.row_factory = sqlite3.Row
@@ -196,6 +207,7 @@ def get_movement_history(employeeId):
 @app.route('/api/alerts/forbidden-zone', methods=['POST'])
 def report_forbidden_zone():
     if not session.get('logged_in'):
+        print("Access denied to /api/alerts/forbidden-zone")  # Débogage
         return jsonify({"error": "Non autorisé"}), 403
     alert = request.get_json()
     required = ['employeeId', 'employeeName', 'zoneName', 'timestamp']
@@ -221,6 +233,7 @@ def report_forbidden_zone():
 @app.route('/api/esp32/status', methods=['GET'])
 def get_esp32_status():
     if not session.get('logged_in'):
+        print("Access denied to /api/esp32/status")  # Débogage
         return jsonify({"error": "Non autorisé"}), 403
     return jsonify({
         "is_online": True,
@@ -233,6 +246,7 @@ def get_esp32_status():
 @app.route('/api/esp32/buzzer', methods=['POST'])
 def activate_buzzer():
     if not session.get('logged_in'):
+        print("Access denied to /api/esp32/buzzer")  # Débogage
         return jsonify({"error": "Non autorisé"}), 403
     data = request.get_json()
     duration = data.get('durationMs', 1000)
@@ -248,6 +262,7 @@ def activate_buzzer():
 @app.route('/api/sync/pointages', methods=['GET'])
 def get_unsynced_pointages():
     if not session.get('logged_in'):
+        print("Access denied to /api/sync/pointages")  # Débogage
         return jsonify({"error": "Non autorisé"}), 403
     conn = get_db()
     conn.row_factory = sqlite3.Row
@@ -259,6 +274,7 @@ def get_unsynced_pointages():
 @app.route('/api/pointages', methods=['POST'])
 def add_pointage():
     if not session.get('logged_in'):
+        print("Access denied to /api/pointages")  # Débogage
         return jsonify({"error": "Non autorisé"}), 403
     p = request.get_json()
     required = ['id', 'employeeId', 'employeeName', 'type', 'timestamp', 'date']
@@ -287,6 +303,7 @@ def add_pointage():
 @app.route('/api/pointages', methods=['GET'])
 def get_all_pointages():
     if not session.get('logged_in'):
+        print("Access denied to /api/pointages GET")  # Débogage
         return jsonify({"error": "Non autorisé"}), 403
     conn = get_db()
     conn.row_factory = sqlite3.Row
@@ -298,6 +315,7 @@ def get_all_pointages():
 @app.route('/api/employee_payments', methods=['GET'])
 def get_employee_payments():
     if not session.get('logged_in'):
+        print("Access denied to /api/employee_payments")  # Débogage
         return jsonify({"error": "Non autorisé"}), 403
     try:
         conn = get_db()
@@ -353,14 +371,17 @@ def login_page():
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')
+        print(f"Login attempt: username={username}, password={password}")  # Débogage
         if username == 'admin' and password == '1234':
             session['logged_in'] = True
             session['role'] = 'admin'
             session['userId'] = 'ADMIN001'
+            print("Login successful")  # Débogage
             return redirect(url_for('dashboard'))
+        print("Login failed")  # Débogage
         return render_template('login.html', error="Identifiants invalides")
     return render_template('login.html')
 
 # --- Démarrage ---
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)), debug=False)
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)), debug=True)  # Activer debug pour logs
